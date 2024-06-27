@@ -6,25 +6,12 @@ internal class CombinedInvestment(Normal pdf)
 {
     public Normal Pdf { get; private set; } = pdf;
 
-    public static CombinedInvestment From(IEnumerable<WeightedInvestment> investments)
+    public static CombinedInvestment From(WeightedInvestments investments)
     {
-        double sumOfWeights = investments.Sum(x => x.Weight);
-        double mean = CalculateCombinedMean(investments, sumOfWeights);
-        double stdDev = CalculateCombinedStdDev(investments, sumOfWeights);
-        return new CombinedInvestment(new Normal(mean, stdDev));
+        var pdf = new Normal(investments.CalculateCombinedMean(), investments.CalculateCombinedStdDev());
+        return new CombinedInvestment(pdf);
     }
 
-    public static CombinedInvestment From(Investment[] investments, double[] weights)
-    {
-        var weightedInvestments = investments.Select(
-            (investment, index) => WeightedInvestment.From(investment, weights[index]));
-
-        return From(weightedInvestments);
-    }
-
-    private static double CalculateCombinedMean(IEnumerable<WeightedInvestment> investments, double sumOfWeights) =>
-    investments.Sum(investments => investments.WeightedMean) / sumOfWeights;
-
-    private static double CalculateCombinedStdDev(IEnumerable<WeightedInvestment> investments, double sumOfWeights) =>
-        Math.Sqrt(investments.Sum(investments => investments.WeightedStdDev * investments.WeightedStdDev)) / sumOfWeights;
+    public static CombinedInvestment From(Investment[] investments, double[] weights) =>
+        From(WeightedInvestments.From(investments, weights));
 }

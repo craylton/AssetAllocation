@@ -2,10 +2,10 @@
 
 internal class GradientDescent
 {
-    public int MaxIterations { get; init; } = 200;
+    public int MaxIterations { get; init; } = 50;
     public double TargetYield { get; init; } = 0;
 
-    public IEnumerable<WeightedInvestment> Optimise(Investment[] investments)
+    public WeightedInvestments Optimise(Investment[] investments)
     {
         Random random = new Random();
         int numInvestments = investments.Length;
@@ -18,7 +18,7 @@ internal class GradientDescent
         while (iterations < MaxIterations)
         {
             var weightsArray = GetWeights(bestWeights, learningRate);
-            learningRate *= 0.8;
+            learningRate *= 0.7 + random.NextDouble() * 0.1;
 
             foreach (var weights in weightsArray)
             {
@@ -35,13 +35,13 @@ internal class GradientDescent
             iterations++;
         }
 
-        return investments.Select((investment, index) => WeightedInvestment.From(investment, bestWeights[index]));
+        return WeightedInvestments.From(investments, bestWeights);
     }
 
     private IEnumerable<double[]> GetWeights(double[] previousBest, double searchWidth)
     {
-        double lower = Math.Clamp(previousBest[0] - searchWidth, 0.1, 100);
-        double upper = Math.Clamp(previousBest[0] + searchWidth, 0.1, 100);
+        double lower = Math.Clamp(previousBest[0] - searchWidth, 0.01, 100);
+        double upper = Math.Clamp(previousBest[0] + searchWidth, 0.01, 100);
         if (previousBest.Length <= 1)
         {
             yield return [lower];

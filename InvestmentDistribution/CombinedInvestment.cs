@@ -12,6 +12,6 @@ internal class CombinedInvestment(Normal pdf)
         return new CombinedInvestment(pdf);
     }
 
-    public static CombinedInvestment From(Investment[] investments, double[] weights) =>
+    public static CombinedInvestment From(Investment[] investments, Weights weights) =>
         From(WeightedInvestments.From(investments, weights));
 }

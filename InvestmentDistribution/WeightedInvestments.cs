@@ -3,19 +3,17 @@ using System.Text;
 
 namespace InvestmentDistribution;
 
-public class WeightedInvestments(List<WeightedInvestment> weightedInvestments) : IEnumerable<WeightedInvestment>
+public class WeightedInvestments(IList<WeightedInvestment> weightedInvestments) : IEnumerable<WeightedInvestment>
 {
-    private readonly List<WeightedInvestment> _weightedInvestments = weightedInvestments;
+    private readonly IList<WeightedInvestment> _weightedInvestments = weightedInvestments;
 
-    public static WeightedInvestments From(IEnumerable<Investment> investments, double[] weights)
+    public static WeightedInvestments From(IEnumerable<Investment> investments, Weights weights)
     {
-        double sumOfWeights = weights.Sum();
-        double[] normalisedWeights = weights.Select(weight => weight * 100 / sumOfWeights).ToArray();
+        List<WeightedInvestment> weightedInvestments = investments
+            .Select((investment, index) => WeightedInvestment.From(investment, weights[index]))
+            .ToList();
 
-        var weightedInvestments = investments.Select(
-            (investment, index) => WeightedInvestment.From(investment, normalisedWeights[index]));
-
-        return new WeightedInvestments(weightedInvestments.ToList());
+        return new WeightedInvestments(weightedInvestments);
     }
 
     public double CalculateCombinedMean() =>
@@ -30,7 +28,7 @@ public class WeightedInvestments(List<WeightedInvestment> weightedInvestments) :
     public override string ToString()
     {
         var stringBuilder = new StringBuilder();
-        foreach (var weightedInvestment in _weightedInvestments)
+        foreach (WeightedInvestment weightedInvestment in _weightedInvestments)
         {
             stringBuilder.Append(weightedInvestment);
             stringBuilder.AppendLine();

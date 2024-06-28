@@ -10,5 +10,6 @@ public class WeightedInvestment(string name, double mean, double standardDeviati
     public static WeightedInvestment From(Investment investment, double weight) =>
         new WeightedInvestment(investment.Name, investment.Mean, investment.StandardDeviation, weight);
 
-    public override string ToString() => $"{Name}: {Weight} (N({Mean}, {StandardDeviation}))";
+    public override string ToString() =>
+        $"{Name}: {Weight * 100:0.00}% (N({Mean}, {StandardDeviation}))";
 }

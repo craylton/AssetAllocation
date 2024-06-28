@@ -9,8 +9,8 @@ internal class GradientDescent
     {
         Random random = new Random();
         int numInvestments = investments.Length;
-        double[] initialWeights = investments.Select(_ => 50d).ToArray();
-        double[] bestWeights = initialWeights;
+        Weights initialWeights = new Weights(investments.Select(_ => 50d).ToList());
+        Weights bestWeights = initialWeights;
         double bestOutcome = 0d;
         double learningRate = 50d;
 
@@ -20,14 +20,14 @@ internal class GradientDescent
             var weightsArray = GetWeights(bestWeights, learningRate);
             learningRate *= 0.7 + random.NextDouble() * 0.1;
 
-            foreach (var weights in weightsArray)
+            foreach (var weights in weightsArray.Select(weights => new Weights(weights)))
             {
                 CombinedInvestment uut = CombinedInvestment.From(investments, weights);
                 double outcome = 1 - uut.Pdf.CumulativeDistribution(TargetYield);
 
                 if (outcome > bestOutcome)
                 {
-                    bestWeights = weights;
+                    bestWeights = weights.Normalise();
                     bestOutcome = outcome;
                 }
             }
@@ -38,23 +38,25 @@ internal class GradientDescent
         return WeightedInvestments.From(investments, bestWeights);
     }
 
-    private IEnumerable<double[]> GetWeights(double[] previousBest, double searchWidth)
+    private IEnumerable<Weights> GetWeights(Weights previousBest, double searchWidth)
     {
-        double lower = Math.Clamp(previousBest[0] - searchWidth, 0.01, 100);
-        double upper = Math.Clamp(previousBest[0] + searchWidth, 0.01, 100);
-        if (previousBest.Length <= 1)
+        double lower = Math.Clamp(previousBest[0] - searchWidth, 0.00001, 100);
+        double upper = Math.Clamp(previousBest[0] + searchWidth, 0.00001, 100);
+
+        if (previousBest.Count <= 1)
         {
-            yield return [lower];
-            yield return [upper];
+            yield return new Weights([lower]);
+            yield return new Weights([upper]);
         }
         else
         {
-            IEnumerable<IEnumerable<double>> weightsList = GetWeights(previousBest[1..], searchWidth);
+            var reducedWeights = new Weights(previousBest.ToArray()[1..].ToList());
+            IEnumerable<Weights> weightsList = GetWeights(reducedWeights, searchWidth);
 
             foreach (var weights in weightsList)
             {
-                yield return weights.Prepend(lower).ToArray();
-                yield return weights.Prepend(upper).ToArray();
+                yield return weights.Prepend(lower);
+                yield return weights.Prepend(upper);
             }
         }
     }

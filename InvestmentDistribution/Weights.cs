@@ -22,9 +22,6 @@ public class Weights(IList<double> weights) : IList<double>
         return new Weights(_weights.Select(weight => weight / sumOfWeights).ToList());
     }
 
-    public static Weights Normalise(double[] weights) =>
-        new Weights(weights).Normalise();
-
     public int IndexOf(double item) => _weights.IndexOf(item);
     public void Insert(int index, double item) => _weights[index] = item;
     public void RemoveAt(int index) => _weights.RemoveAt(index);

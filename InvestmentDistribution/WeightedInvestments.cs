@@ -17,11 +17,11 @@ public class WeightedInvestments(IList<WeightedInvestment> weightedInvestments) 
     }
 
     public double CalculateCombinedMean() =>
-        _weightedInvestments.Sum(investments => investments.WeightedMean) / CalculateSumOfWeights();
+        _weightedInvestments.Sum(investment => investment.WeightedMean) / CalculateSumOfWeights();
 
     public double CalculateCombinedStdDev()
     {
-        var sumOfSquares = _weightedInvestments.Sum(investments => investments.WeightedStdDev * investments.WeightedStdDev);
+        var sumOfSquares = _weightedInvestments.Sum(investment => investment.WeightedStdDev * investment.WeightedStdDev);
         return Math.Sqrt(sumOfSquares) / CalculateSumOfWeights();
     }
 

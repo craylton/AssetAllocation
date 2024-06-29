@@ -20,14 +20,14 @@ internal class GradientDescent
             var weightsArray = GetWeights(bestWeights, learningRate);
             learningRate *= 0.7 + random.NextDouble() * 0.1;
 
-            foreach (var weights in weightsArray.Select(weights => new Weights(weights)))
+            foreach (var weights in weightsArray.Select(weights => weights.Normalise()))
             {
                 CombinedInvestment uut = CombinedInvestment.From(investments, weights);
                 double outcome = 1 - uut.Pdf.CumulativeDistribution(TargetYield);
 
                 if (outcome > bestOutcome)
                 {
-                    bestWeights = weights.Normalise();
+                    bestWeights = weights;
                     bestOutcome = outcome;
                 }
             }

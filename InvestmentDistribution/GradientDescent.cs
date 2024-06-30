@@ -3,7 +3,7 @@
 internal class GradientDescent
 {
     public int MaxIterations { get; init; } = 50;
-    public double TargetYield { get; init; } = 0;
+    public double TargetYield { get; init; } = 1.03;
 
     public WeightedInvestments Optimise(Investment[] investments)
     {
@@ -17,7 +17,7 @@ internal class GradientDescent
         int iterations = 0;
         while (iterations < MaxIterations)
         {
-            var weightsArray = GetWeights(bestWeights, learningRate);
+            var weightsArray = GetWeightsToTest(bestWeights, learningRate);
             learningRate *= 0.7 + random.NextDouble() * 0.1;
 
             foreach (var weights in weightsArray.Select(weights => weights.Normalise()))
@@ -38,7 +38,7 @@ internal class GradientDescent
         return WeightedInvestments.From(investments, bestWeights);
     }
 
-    private IEnumerable<Weights> GetWeights(Weights previousBest, double searchWidth)
+    private IEnumerable<Weights> GetWeightsToTest(Weights previousBest, double searchWidth)
     {
         double lower = Math.Clamp(previousBest[0] - searchWidth, 0.00001, 100);
         double upper = Math.Clamp(previousBest[0] + searchWidth, 0.00001, 100);
@@ -51,7 +51,7 @@ internal class GradientDescent
         else
         {
             var reducedWeights = new Weights(previousBest.ToArray()[1..].ToList());
-            IEnumerable<Weights> weightsList = GetWeights(reducedWeights, searchWidth);
+            IEnumerable<Weights> weightsList = GetWeightsToTest(reducedWeights, searchWidth);
 
             foreach (var weights in weightsList)
             {

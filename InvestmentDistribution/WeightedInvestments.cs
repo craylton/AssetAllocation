@@ -17,12 +17,12 @@ public class WeightedInvestments(IList<WeightedInvestment> weightedInvestments) 
     }
 
     public double CalculateCombinedMean() =>
-        _weightedInvestments.Sum(investment => investment.WeightedMean) / CalculateSumOfWeights();
+        _weightedInvestments.Sum(investment => investment.WeightedMean);
 
     public double CalculateCombinedStdDev()
     {
         var sumOfSquares = _weightedInvestments.Sum(investment => investment.WeightedStdDev * investment.WeightedStdDev);
-        return Math.Sqrt(sumOfSquares) / CalculateSumOfWeights();
+        return Math.Sqrt(sumOfSquares);
     }
 
     public override string ToString()
@@ -36,7 +36,6 @@ public class WeightedInvestments(IList<WeightedInvestment> weightedInvestments) 
         return stringBuilder.ToString();
     }
 
-    private double CalculateSumOfWeights() => _weightedInvestments.Sum(x => x.Weight);
     public IEnumerator<WeightedInvestment> GetEnumerator() => _weightedInvestments.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => _weightedInvestments.GetEnumerator();
 }

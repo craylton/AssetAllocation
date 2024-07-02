@@ -2,17 +2,17 @@
 
 internal class GradientDescent
 {
-    public int MaxIterations { get; init; } = 400;
+    public int MaxIterations { get; init; } = 200;
     public double TargetYield { get; init; } = 1.03;
 
     public WeightedInvestments Optimise(Investment[] investments)
     {
         Random random = new Random();
         int numInvestments = investments.Length;
-        Weights initialWeights = new Weights(investments.Select(_ => 50d).ToList());
+        Weights initialWeights = new Weights(investments.Select(_ => 1d).ToList()).Normalise();
         Weights bestWeights = initialWeights;
         double bestOutcome = 0d;
-        double learningRate = 50d;
+        double learningRate = 0.5d;
 
         int iterations = 0;
         while (iterations < MaxIterations / 5)
@@ -40,24 +40,22 @@ internal class GradientDescent
 
     public WeightedInvestments OptimiseWithSimulation(Investment[] investments)
     {
-        Random random = new Random();
         int numInvestments = investments.Length;
         Weights initialWeights = new Weights(Optimise(investments).Select(investments => investments.Weight).ToList());
         Weights bestWeights = initialWeights;
-        double learningRate = 2d;
+        double learningRate = 0.1d;
 
         int iterations = 0;
         while (iterations < MaxIterations)
         {
-            bestWeights = initialWeights;
-            double bestOutcome = 0d;
+            double bestOutcome = double.MinValue;
             var weightsArray = GetWeightsToTest(bestWeights, learningRate);
-            learningRate *= 0.95;
+            learningRate *= 0.9;
 
             foreach (var weights in weightsArray.Select(weights => weights.Normalise()))
             {
                 var weightedInvestments = WeightedInvestments.From(investments, weights);
-                double outcome = weightedInvestments.Simulate(TargetYield, MaxIterations);
+                double outcome = weightedInvestments.Simulate(TargetYield, MaxIterations, 5);
 
                 if (outcome > bestOutcome)
                 {
@@ -74,8 +72,8 @@ internal class GradientDescent
 
     private IEnumerable<Weights> GetWeightsToTest(Weights previousBest, double searchWidth)
     {
-        double lower = Math.Clamp(previousBest[0] - searchWidth, 0.00001, 100);
-        double upper = Math.Clamp(previousBest[0] + searchWidth, 0.00001, 100);
+        double lower = Math.Clamp(previousBest[0] - searchWidth, 0.0000001, 1);
+        double upper = Math.Clamp(previousBest[0] + searchWidth, 0.0000001, 1);
 
         if (previousBest.Count <= 1)
         {

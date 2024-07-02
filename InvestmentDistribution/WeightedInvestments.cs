@@ -36,7 +36,7 @@ public class WeightedInvestments(IList<WeightedInvestment> weightedInvestments) 
         return stringBuilder.ToString();
     }
 
-    internal double Simulate(double targetYield, double iterations)
+    internal double Simulate(double targetYield, double iterations, int numYears)
     {
         int counter = 0;
         for (int i = 0; i < iterations; i++)
@@ -44,13 +44,17 @@ public class WeightedInvestments(IList<WeightedInvestment> weightedInvestments) 
             double yield = 1.00;
             foreach (var investment in _weightedInvestments)
             {
-                var sample = investment.Pdf.Sample();
-                yield *= ((sample - 1) * investment.Weight) + 1;
+                var samples = investment.Pdf.Samples().Take(numYears);
+                foreach (var sample in samples)
+                {
+                    yield *= ((sample - 1) * investment.Weight) + 1;
+                }
             }
 
-            if (yield > targetYield)
+            if (yield > Math.Pow(targetYield, numYears))
                 counter++;
         }
+
         return counter;
     }
 

@@ -36,6 +36,24 @@ public class WeightedInvestments(IList<WeightedInvestment> weightedInvestments) 
         return stringBuilder.ToString();
     }
 
+    internal double Simulate(double targetYield, double iterations)
+    {
+        int counter = 0;
+        for (int i = 0; i < iterations; i++)
+        {
+            double yield = 1.00;
+            foreach (var investment in _weightedInvestments)
+            {
+                var sample = investment.Pdf.Sample();
+                yield *= ((sample - 1) * investment.Weight) + 1;
+            }
+
+            if (yield > targetYield)
+                counter++;
+        }
+        return counter;
+    }
+
     public IEnumerator<WeightedInvestment> GetEnumerator() => _weightedInvestments.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => _weightedInvestments.GetEnumerator();
 }

@@ -7,6 +7,6 @@ public class AssetAllocation(IEnumerable<Investment> investments)
     public WeightedInvestments CalculateAllocations()
     {
         GradientDescent gradientDescent = new();
-        return gradientDescent.Optimise(Investments.ToArray());
+        return gradientDescent.OptimiseWithSimulation(Investments.ToArray());
     }
 }

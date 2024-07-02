@@ -2,7 +2,7 @@
 
 internal class GradientDescent
 {
-    public int MaxIterations { get; init; } = 50;
+    public int MaxIterations { get; init; } = 400;
     public double TargetYield { get; init; } = 1.03;
 
     public WeightedInvestments Optimise(Investment[] investments)
@@ -15,7 +15,7 @@ internal class GradientDescent
         double learningRate = 50d;
 
         int iterations = 0;
-        while (iterations < MaxIterations)
+        while (iterations < MaxIterations / 5)
         {
             var weightsArray = GetWeightsToTest(bestWeights, learningRate);
             learningRate *= 0.7 + random.NextDouble() * 0.1;
@@ -24,6 +24,40 @@ internal class GradientDescent
             {
                 CombinedInvestment uut = CombinedInvestment.From(investments, weights);
                 double outcome = 1 - uut.Pdf.CumulativeDistribution(TargetYield);
+
+                if (outcome > bestOutcome)
+                {
+                    bestWeights = weights;
+                    bestOutcome = outcome;
+                }
+            }
+
+            iterations++;
+        }
+
+        return WeightedInvestments.From(investments, bestWeights);
+    }
+
+    public WeightedInvestments OptimiseWithSimulation(Investment[] investments)
+    {
+        Random random = new Random();
+        int numInvestments = investments.Length;
+        Weights initialWeights = new Weights(Optimise(investments).Select(investments => investments.Weight).ToList());
+        Weights bestWeights = initialWeights;
+        double learningRate = 2d;
+
+        int iterations = 0;
+        while (iterations < MaxIterations)
+        {
+            bestWeights = initialWeights;
+            double bestOutcome = 0d;
+            var weightsArray = GetWeightsToTest(bestWeights, learningRate);
+            learningRate *= 0.95;
+
+            foreach (var weights in weightsArray.Select(weights => weights.Normalise()))
+            {
+                var weightedInvestments = WeightedInvestments.From(investments, weights);
+                double outcome = weightedInvestments.Simulate(TargetYield, MaxIterations);
 
                 if (outcome > bestOutcome)
                 {

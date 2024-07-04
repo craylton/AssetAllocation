@@ -36,18 +36,29 @@ public class WeightedInvestments(IList<WeightedInvestment> weightedInvestments) 
         return stringBuilder.ToString();
     }
 
-    internal double Simulate(double targetYield, double iterations, int numYears)
+    internal double Simulate(double targetYield, int iterations, int numYears)
     {
         int counter = 0;
-        for (int i = 0; i < iterations; i++)
+
+        int numSamples = iterations * numYears;
+        double[][] samples = new double[_weightedInvestments.Count][];
+        for (int i = 0; i < _weightedInvestments.Count; i++)
+        {
+            samples[i] = _weightedInvestments[i].Pdf.Samples().Take(numSamples).ToArray();
+            for (int j = 0; j < samples[i].Length; j++)
+            {
+                samples[i][j] = (samples[i][j] - 1) * _weightedInvestments[i].Weight;
+            }
+        }
+
+        for (int iterationIndex = 0; iterationIndex < numSamples; iterationIndex += numYears)
         {
             double yield = 1.00;
-            foreach (var investment in _weightedInvestments)
+            for (int investmentIndex = 0; investmentIndex < _weightedInvestments.Count; investmentIndex++)
             {
-                var samples = investment.Pdf.Samples().Take(numYears);
-                foreach (var sample in samples)
+                for (int yearIndex = 0; yearIndex < numYears; yearIndex++)
                 {
-                    yield *= ((sample - 1) * investment.Weight) + 1;
+                    yield += samples[investmentIndex][iterationIndex + yearIndex];
                 }
             }
 

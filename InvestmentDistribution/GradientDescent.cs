@@ -55,7 +55,7 @@ internal class GradientDescent
             foreach (var weights in weightsArray.Select(weights => weights.Normalise()))
             {
                 var weightedInvestments = WeightedInvestments.From(investments, weights);
-                double outcome = weightedInvestments.Simulate(TargetYield, 500, 5);
+                double outcome = weightedInvestments.Simulate(TargetYield, 1000, 5);
 
                 if (outcome > bestOutcome)
                 {

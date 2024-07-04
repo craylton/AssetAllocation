@@ -39,26 +39,16 @@ public class WeightedInvestments(IList<WeightedInvestment> weightedInvestments) 
     internal double Simulate(double targetYield, int iterations, int numYears)
     {
         int counter = 0;
+        double[][] samples = GetSamples(iterations, numYears);
 
-        int numSamples = iterations * numYears;
-        double[][] samples = new double[_weightedInvestments.Count][];
-        for (int i = 0; i < _weightedInvestments.Count; i++)
-        {
-            samples[i] = _weightedInvestments[i].Pdf.Samples().Take(numSamples).ToArray();
-            for (int j = 0; j < samples[i].Length; j++)
-            {
-                samples[i][j] = (samples[i][j] - 1) * _weightedInvestments[i].Weight;
-            }
-        }
-
-        for (int iterationIndex = 0; iterationIndex < numSamples; iterationIndex += numYears)
+        for (int iterationIndex = 0; iterationIndex < iterations; iterationIndex++)
         {
             double yield = 1.00;
             for (int investmentIndex = 0; investmentIndex < _weightedInvestments.Count; investmentIndex++)
             {
                 for (int yearIndex = 0; yearIndex < numYears; yearIndex++)
                 {
-                    yield += samples[investmentIndex][iterationIndex + yearIndex];
+                    yield += samples[investmentIndex][iterationIndex * numYears + yearIndex];
                 }
             }
 
@@ -67,6 +57,22 @@ public class WeightedInvestments(IList<WeightedInvestment> weightedInvestments) 
         }
 
         return counter;
+    }
+
+    private double[][] GetSamples(int iterations, int numYears)
+    {
+        int numSamples = iterations * numYears;
+        double[][] samples = new double[_weightedInvestments.Count][];
+
+        for (int i = 0; i < _weightedInvestments.Count; i++)
+        {
+            samples[i] = _weightedInvestments[i].Pdf.Samples()
+                .Take(numSamples)
+                .Select(sample => (sample - 1) * _weightedInvestments[i].Weight)
+                .ToArray();
+        }
+
+        return samples;
     }
 
     public IEnumerator<WeightedInvestment> GetEnumerator() => _weightedInvestments.GetEnumerator();

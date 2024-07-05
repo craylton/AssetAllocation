@@ -48,26 +48,41 @@ internal class GradientDescent
         int iterations = 0;
         while (iterations < MaxIterations)
         {
-            double bestOutcome = double.MinValue;
+            Dictionary<Weights, double> results = [];
             var weightsArray = GetWeightsToTest(bestWeights, learningRate);
-            learningRate *= 0.9;
+            learningRate *= 0.8;
 
             foreach (var weights in weightsArray.Select(weights => weights.Normalise()))
             {
                 var weightedInvestments = WeightedInvestments.From(investments, weights);
                 double outcome = weightedInvestments.Simulate(TargetYield, 1000, 5);
-
-                if (outcome > bestOutcome)
-                {
-                    bestWeights = weights;
-                    bestOutcome = outcome;
-                }
+                results[weights] = outcome;
             }
 
+            bestWeights = new Weights(GetNewWeightsFromResults(investments.Length, results));
             iterations++;
         }
 
         return WeightedInvestments.From(investments, bestWeights);
+    }
+
+    private static double[] GetNewWeightsFromResults(int numInvestments, Dictionary<Weights, double> results)
+    {
+        var resultsList = results.ToList();
+        resultsList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
+        var bestWeightsLists = resultsList.Take(Math.Max(results.Count / 8, 1)).Select(res => res.Key);
+        double[] newWeights = new double[numInvestments];
+
+        for (int i = 0; i < newWeights.Length; i++)
+        {
+            foreach (var weights in bestWeightsLists)
+            {
+                newWeights[i] += weights[i];
+            }
+            newWeights[i] /= bestWeightsLists.Count();
+        }
+
+        return newWeights;
     }
 
     private IEnumerable<Weights> GetWeightsToTest(Weights previousBest, double searchWidth)

@@ -1,4 +1,6 @@
-﻿namespace InvestmentDistribution;
+﻿using System.Collections.Concurrent;
+
+namespace InvestmentDistribution;
 
 internal class GradientDescent
 {
@@ -48,16 +50,16 @@ internal class GradientDescent
         int iterations = 0;
         while (iterations < MaxIterations)
         {
-            Dictionary<Weights, double> results = [];
+            ConcurrentDictionary<Weights, double> results = [];
             var weightsArray = GetWeightsToTest(bestWeights, learningRate);
-            learningRate *= 0.8;
+            learningRate *= 0.75;
 
-            foreach (var weights in weightsArray.Select(weights => weights.Normalise()))
+            Parallel.ForEach(weightsArray.Select(weights => weights.Normalise()), weights =>
             {
                 var weightedInvestments = WeightedInvestments.From(investments, weights);
                 double outcome = weightedInvestments.Simulate(TargetYield, 1000, 5);
                 results[weights] = outcome;
-            }
+            });
 
             bestWeights = new Weights(GetNewWeightsFromResults(investments.Length, results));
             iterations++;
@@ -66,7 +68,7 @@ internal class GradientDescent
         return WeightedInvestments.From(investments, bestWeights);
     }
 
-    private static double[] GetNewWeightsFromResults(int numInvestments, Dictionary<Weights, double> results)
+    private static double[] GetNewWeightsFromResults(int numInvestments, ConcurrentDictionary<Weights, double> results)
     {
         var resultsList = results.ToList();
         resultsList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));

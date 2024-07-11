@@ -2,11 +2,12 @@
 
 namespace InvestmentDistribution;
 
-internal class GradientDescent
+internal class GradientDescent(double threshold, int simulationSize, double targetYield, int numYears)
 {
-    public double Threshold { get; init; } = 1e-5;
-    public int SimulationSize { get; set; } = 100;
-    public double TargetYield { get; init; } = 1.03;
+    public double Threshold { get; } = threshold;
+    public int SimulationSize { get; } = simulationSize;
+    public double TargetYield { get; } = targetYield;
+    public int NumYears { get; } = numYears;
 
     public WeightedInvestments OptimiseWithSimulation(Investment[] investments)
     {
@@ -25,7 +26,7 @@ internal class GradientDescent
             Parallel.ForEach(weightsArray.Select(weights => weights.Normalise()), weights =>
             {
                 var weightedInvestments = WeightedInvestments.From(investments, weights);
-                double outcome = weightedInvestments.Simulate(TargetYield, SimulationSize, 5);
+                double outcome = weightedInvestments.Simulate(TargetYield, SimulationSize, NumYears);
                 results[weights] = outcome;
             });
 
@@ -33,10 +34,7 @@ internal class GradientDescent
             iterations++;
         }
 
-        var a = WeightedInvestments.From(investments, bestWeights);
-        var successRate = a.Simulate(TargetYield, SimulationSize * 100, 5) / (SimulationSize * 100);
-        Console.WriteLine($"{successRate * 100}% chance of reaching target");
-        return a;
+        return WeightedInvestments.From(investments, bestWeights);
     }
 
     private static double[] GetNewWeightsFromResults(int numInvestments, ConcurrentDictionary<Weights, double> results)

@@ -36,7 +36,7 @@ public class WeightedInvestments(IList<WeightedInvestment> weightedInvestments) 
         return stringBuilder.ToString();
     }
 
-    internal double Simulate(double targetYield, int iterations, int numYears)
+    public double Simulate(double targetYield, int iterations, int numYears)
     {
         int counter = 0;
         double overallTargetYield = Math.Pow(targetYield, numYears);

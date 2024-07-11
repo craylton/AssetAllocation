@@ -13,10 +13,23 @@ List<Investment> investments =
 ];
 
 var assetAllocation = new AssetAllocation(investments);
+double target = 1.03;
 
 var stopwatch = Stopwatch.StartNew();
-var bestWeightings = assetAllocation.CalculateAllocations();
+
+var bestWeightings = assetAllocation.CalculateAllocations(target, 5);
+
+PrintChanceOfBeatingTarget(target, bestWeightings, "target");
+PrintChanceOfBeatingTarget(1.02, bestWeightings, "inflation");
+PrintChanceOfBeatingTarget(1.06, bestWeightings, "global stocks");
+
 Console.WriteLine($"Finished in {stopwatch.ElapsedMilliseconds}ms");
 Console.WriteLine();
 
 Console.WriteLine(bestWeightings);
+
+static void PrintChanceOfBeatingTarget(double target, WeightedInvestments bestWeightings, string targetName)
+{
+    var successRate = bestWeightings.Simulate(target, 5000, 5) / 50;
+    Console.WriteLine($"{successRate}% chance of beating {targetName} ({(target - 1) * 100}%)");
+}

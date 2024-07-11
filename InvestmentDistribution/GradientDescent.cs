@@ -4,60 +4,28 @@ namespace InvestmentDistribution;
 
 internal class GradientDescent
 {
-    public int MaxIterations { get; init; } = 50;
+    public double Threshold { get; init; } = 1e-5;
+    public int SimulationSize { get; set; } = 100;
     public double TargetYield { get; init; } = 1.03;
-
-    public WeightedInvestments Optimise(Investment[] investments)
-    {
-        Random random = new Random();
-        int numInvestments = investments.Length;
-        Weights initialWeights = new Weights(investments.Select(_ => 1d).ToList()).Normalise();
-        Weights bestWeights = initialWeights;
-        double bestOutcome = 0d;
-        double learningRate = 0.5d;
-
-        int iterations = 0;
-        while (iterations < MaxIterations)
-        {
-            var weightsArray = GetWeightsToTest(bestWeights, learningRate);
-            learningRate *= 0.7 + random.NextDouble() * 0.1;
-
-            foreach (var weights in weightsArray.Select(weights => weights.Normalise()))
-            {
-                CombinedInvestment uut = CombinedInvestment.From(investments, weights);
-                double outcome = 1 - uut.Pdf.CumulativeDistribution(TargetYield);
-
-                if (outcome > bestOutcome)
-                {
-                    bestWeights = weights;
-                    bestOutcome = outcome;
-                }
-            }
-
-            iterations++;
-        }
-
-        return WeightedInvestments.From(investments, bestWeights);
-    }
 
     public WeightedInvestments OptimiseWithSimulation(Investment[] investments)
     {
         int numInvestments = investments.Length;
-        Weights initialWeights = new Weights(Optimise(investments).Select(investments => investments.Weight).ToList());
+        Weights initialWeights = new Weights(investments.Select(_ => 1d).ToList()).Normalise();
         Weights bestWeights = initialWeights;
-        double learningRate = 0.1d;
+        double learningRate = 0.16d;
 
         int iterations = 0;
-        while (iterations < MaxIterations)
+        while (learningRate > 0.00001)
         {
             ConcurrentDictionary<Weights, double> results = [];
             var weightsArray = GetWeightsToTest(bestWeights, learningRate);
-            learningRate *= 0.75;
+            learningRate *= 0.975;
 
             Parallel.ForEach(weightsArray.Select(weights => weights.Normalise()), weights =>
             {
                 var weightedInvestments = WeightedInvestments.From(investments, weights);
-                double outcome = weightedInvestments.Simulate(TargetYield, 1000, 5);
+                double outcome = weightedInvestments.Simulate(TargetYield, SimulationSize, 5);
                 results[weights] = outcome;
             });
 
@@ -65,26 +33,38 @@ internal class GradientDescent
             iterations++;
         }
 
-        return WeightedInvestments.From(investments, bestWeights);
+        var a = WeightedInvestments.From(investments, bestWeights);
+        var successRate = a.Simulate(TargetYield, SimulationSize * 100, 5) / (SimulationSize * 100);
+        Console.WriteLine($"{successRate * 100}% chance of reaching target");
+        return a;
     }
 
     private static double[] GetNewWeightsFromResults(int numInvestments, ConcurrentDictionary<Weights, double> results)
     {
-        var resultsList = results.ToList();
-        resultsList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
-        var bestWeightsLists = resultsList.Take(Math.Max(results.Count / 8, 1)).Select(res => res.Key);
-        double[] newWeights = new double[numInvestments];
+        List<KeyValuePair<Weights, double>> resultsList = SortResults(results);
+        Weights[] bestWeightsLists = resultsList
+            .Take(Math.Max(results.Count / 10, 1))
+            .Select(res => res.Key)
+            .ToArray();
 
-        for (int i = 0; i < newWeights.Length; i++)
+        double[] newWeights = new double[numInvestments];
+        for (int i = 0; i < numInvestments; i++)
         {
-            foreach (var weights in bestWeightsLists)
+            for (int j = 0; j < bestWeightsLists.Length; j++)
             {
-                newWeights[i] += weights[i];
+                newWeights[i] += bestWeightsLists[j][i];
             }
-            newWeights[i] /= bestWeightsLists.Count();
+            newWeights[i] /= bestWeightsLists.Length;
         }
 
         return newWeights;
+    }
+
+    private static List<KeyValuePair<Weights, double>> SortResults(ConcurrentDictionary<Weights, double> results)
+    {
+        List<KeyValuePair<Weights, double>> resultsList = [.. results];
+        resultsList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
+        return resultsList;
     }
 
     private IEnumerable<Weights> GetWeightsToTest(Weights previousBest, double searchWidth)

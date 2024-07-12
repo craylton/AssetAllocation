@@ -2,10 +2,10 @@
 
 namespace InvestmentDistribution;
 
-internal class GradientDescent(double threshold, int simulationSize, double targetYield, int numYears)
+internal class GradientDescent(SimulationAccuracy simulationAccuracy, double targetYield, int numYears)
 {
-    public double Threshold { get; } = threshold;
-    public int SimulationSize { get; } = simulationSize;
+    public double Threshold { get; } = simulationAccuracy.Threshold;
+    public int SimulationSize { get; } = simulationAccuracy.SamplesPerSimulation;
     public double TargetYield { get; } = targetYield;
     public int NumYears { get; } = numYears;
 
@@ -17,7 +17,7 @@ internal class GradientDescent(double threshold, int simulationSize, double targ
         double learningRate = 0.16d;
 
         int iterations = 0;
-        while (learningRate > 0.00001)
+        while (learningRate > Threshold)
         {
             ConcurrentDictionary<Weights, double> results = [];
             var weightsArray = GetWeightsToTest(bestWeights, learningRate);
@@ -37,25 +37,48 @@ internal class GradientDescent(double threshold, int simulationSize, double targ
         return WeightedInvestments.From(investments, bestWeights);
     }
 
+    private Weights AverageWeights(List<Weights> w)
+    {
+        var numInvestments = w[0].Count;
+        double[] newWeights = new double[numInvestments];
+        for (int i = 0; i < numInvestments; i++)
+        {
+            for (int j = 0; j < w.Count; j++)
+            {
+                newWeights[i] += w[j][i];
+            }
+            newWeights[i] /= w.Count;
+        }
+
+        return new Weights(newWeights);
+    }
+
     private static double[] GetNewWeightsFromResults(int numInvestments, ConcurrentDictionary<Weights, double> results)
     {
         List<KeyValuePair<Weights, double>> resultsList = SortResults(results);
-        Weights[] bestWeightsLists = resultsList
-            .Take(Math.Max(results.Count / 10, 1))
-            .Select(res => res.Key)
-            .ToArray();
 
+        Weights[] bestWeightsLists = resultsList[..Math.Max(results.Count / 4, 1)]
+            .Select(res => res.Key).ToArray();
+
+        Weights[] worstWeightsLists = resultsList[(resultsList.Count - Math.Max(results.Count / 4, 1))..]
+            .Select(res => res.Key).ToArray();
+
+        double[] newBestWeights = new double[numInvestments];
+        double[] newWorstWeights = new double[numInvestments];
         double[] newWeights = new double[numInvestments];
         for (int i = 0; i < numInvestments; i++)
         {
             for (int j = 0; j < bestWeightsLists.Length; j++)
             {
-                newWeights[i] += bestWeightsLists[j][i];
+                newBestWeights[i] += bestWeightsLists[j][i];
+                newWorstWeights[i] += worstWeightsLists[j][i];
             }
-            newWeights[i] /= bestWeightsLists.Length;
+            newBestWeights[i] /= bestWeightsLists.Length;
+            newWorstWeights[i] /= worstWeightsLists.Length;
+            newWeights[i] = 2 * newBestWeights[i] - 1 * newWorstWeights[i];
         }
 
-        return newWeights;
+        return newBestWeights;
     }
 
     private static List<KeyValuePair<Weights, double>> SortResults(ConcurrentDictionary<Weights, double> results)
@@ -77,7 +100,7 @@ internal class GradientDescent(double threshold, int simulationSize, double targ
         }
         else
         {
-            var reducedWeights = new Weights(previousBest.ToArray()[1..].ToList());
+            var reducedWeights = new Weights([.. previousBest.ToArray()[1..]]);
             IEnumerable<Weights> weightsList = GetWeightsToTest(reducedWeights, searchWidth);
 
             foreach (var weights in weightsList)

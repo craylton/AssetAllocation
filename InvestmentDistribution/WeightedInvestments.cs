@@ -36,10 +36,10 @@ public class WeightedInvestments(IList<WeightedInvestment> weightedInvestments) 
         return stringBuilder.ToString();
     }
 
-    public double Simulate(double targetYield, int iterations, int numYears)
+    public double Simulate(InvestmentGoals investmentGoals, int iterations)
     {
-        int counter = 0;
-        double overallTargetYield = Math.Pow(targetYield, numYears);
+        double score = 0;
+        int numYears = investmentGoals.NumberOfYears;
         double[][] samples = GetSamples(iterations, numYears);
 
         for (int iterationIndex = 0; iterationIndex < iterations; iterationIndex++)
@@ -54,11 +54,14 @@ public class WeightedInvestments(IList<WeightedInvestment> weightedInvestments) 
                 }
             }
 
-            if (yield > overallTargetYield)
-                counter++;
+            foreach (var goal in investmentGoals)
+            {
+                if (yield > Math.Pow(goal.Goal, numYears))
+                    score += goal.Importance;
+            }
         }
 
-        return counter;
+        return score;
     }
 
     private double[][] GetSamples(int iterations, int numYears)

@@ -5,9 +5,9 @@ public class AssetAllocation(IEnumerable<Investment> investments, SimulationAccu
     public IEnumerable<Investment> Investments { get; } = investments;
     public SimulationAccuracy SimulationAccuracy { get; } = simulationAccuracy;
 
-    public WeightedInvestments CalculateAllocations(double targetYield, int numYears)
+    public WeightedInvestments CalculateAllocations(InvestmentGoals investmentGoals)
     {
-        GradientDescent gradientDescent = new(SimulationAccuracy, targetYield, numYears);
+        GradientDescent gradientDescent = new(SimulationAccuracy, investmentGoals);
         return gradientDescent.OptimiseWithSimulation(Investments.ToArray());
     }
 }

@@ -12,24 +12,32 @@ List<Investment> investments =
     new Investment("Crypto", 1.05, 0.25),
 ];
 
+InvestmentGoals investmentGoals = new(
+    [
+        new(1.04, 3),
+        new(1.08, 1),
+    ],
+    2);
+
 var assetAllocation = new AssetAllocation(investments, SimulationAccuracy.Normal);
-double target = 1.05;
 
 var stopwatch = Stopwatch.StartNew();
 
-var bestWeightings = assetAllocation.CalculateAllocations(target, 2);
+var bestWeightings = assetAllocation.CalculateAllocations(investmentGoals);
 
-PrintChanceOfBeatingTarget(target, bestWeightings, "target");
-PrintChanceOfBeatingTarget(1.02, bestWeightings, "inflation");
-PrintChanceOfBeatingTarget(1.06, bestWeightings, "global stocks");
+foreach (var goal in investmentGoals)
+{
+    PrintChanceOfBeatingTarget(goal.Goal, investmentGoals.NumberOfYears, bestWeightings);
+}
 
 Console.WriteLine($"Finished in {stopwatch.ElapsedMilliseconds}ms");
 Console.WriteLine();
 
 Console.WriteLine(bestWeightings);
 
-static void PrintChanceOfBeatingTarget(double target, WeightedInvestments bestWeightings, string targetName)
+static void PrintChanceOfBeatingTarget(double target, int numberOfYears, WeightedInvestments bestWeightings)
 {
-    var successRate = bestWeightings.Simulate(target, 5000, 5) / 50;
-    Console.WriteLine($"{successRate}% chance of beating {targetName} ({(target - 1) * 100:0.00}%)");
+    InvestmentGoals investmentGoals = new([new(target, 1)], numberOfYears);
+    var successRate = bestWeightings.Simulate(investmentGoals, 5000) / 50;
+    Console.WriteLine($"{successRate}% chance of getting more than {(target - 1) * 100:0.00}% annual return");
 }

@@ -2,12 +2,11 @@
 
 namespace InvestmentDistribution;
 
-internal class GradientDescent(SimulationAccuracy simulationAccuracy, double targetYield, int numYears)
+internal class GradientDescent(SimulationAccuracy simulationAccuracy, InvestmentGoals investmentGoals)
 {
     public double Threshold { get; } = simulationAccuracy.Threshold;
     public int SimulationSize { get; } = simulationAccuracy.SamplesPerSimulation;
-    public double TargetYield { get; } = targetYield;
-    public int NumYears { get; } = numYears;
+    public InvestmentGoals InvestmentGoals { get; } = investmentGoals;
 
     public WeightedInvestments OptimiseWithSimulation(Investment[] investments)
     {
@@ -26,7 +25,7 @@ internal class GradientDescent(SimulationAccuracy simulationAccuracy, double tar
             Parallel.ForEach(weightsArray.Select(weights => weights.Normalise()), weights =>
             {
                 var weightedInvestments = WeightedInvestments.From(investments, weights);
-                double outcome = weightedInvestments.Simulate(TargetYield, SimulationSize, NumYears);
+                double outcome = weightedInvestments.Simulate(InvestmentGoals, SimulationSize);
                 results[weights] = outcome;
             });
 

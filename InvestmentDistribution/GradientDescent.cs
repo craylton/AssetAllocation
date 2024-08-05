@@ -36,22 +36,6 @@ internal class GradientDescent(SimulationAccuracy simulationAccuracy, Investment
         return WeightedInvestments.From(investments, bestWeights);
     }
 
-    private Weights AverageWeights(List<Weights> w)
-    {
-        var numInvestments = w[0].Count;
-        double[] newWeights = new double[numInvestments];
-        for (int i = 0; i < numInvestments; i++)
-        {
-            for (int j = 0; j < w.Count; j++)
-            {
-                newWeights[i] += w[j][i];
-            }
-            newWeights[i] /= w.Count;
-        }
-
-        return new Weights(newWeights);
-    }
-
     private static double[] GetNewWeightsFromResults(int numInvestments, ConcurrentDictionary<Weights, double> results)
     {
         List<KeyValuePair<Weights, double>> resultsList = SortResults(results);
@@ -77,7 +61,7 @@ internal class GradientDescent(SimulationAccuracy simulationAccuracy, Investment
             newWeights[i] = 2 * newBestWeights[i] - 1 * newWorstWeights[i];
         }
 
-        return newBestWeights;
+        return newWeights;
     }
 
     private static List<KeyValuePair<Weights, double>> SortResults(ConcurrentDictionary<Weights, double> results)

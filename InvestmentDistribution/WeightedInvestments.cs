@@ -45,13 +45,9 @@ public class WeightedInvestments(IList<WeightedInvestment> weightedInvestments) 
         for (int iterationIndex = 0; iterationIndex < iterations; iterationIndex++)
         {
             double yield = 1.00;
-            for (int investmentIndex = 0; investmentIndex < _weightedInvestments.Count; investmentIndex++)
+            for (int yearIndex = 0; yearIndex < numYears; yearIndex++)
             {
-                double weight = _weightedInvestments[investmentIndex].Weight;
-                for (int yearIndex = 0; yearIndex < numYears; yearIndex++)
-                {
-                    yield += (samples[investmentIndex][iterationIndex * numYears + yearIndex] - 1) * weight;
-                }
+                yield *= samples[yearIndex][iterationIndex];
             }
 
             foreach (var goal in investmentGoals)
@@ -66,13 +62,13 @@ public class WeightedInvestments(IList<WeightedInvestment> weightedInvestments) 
 
     private double[][] GetSamples(int iterations, int numYears)
     {
-        int numSamples = iterations * numYears;
-        double[][] samples = new double[_weightedInvestments.Count][];
+        CombinedInvestment combinedInvestment = CombinedInvestment.From(this);
+        double[][] samples = new double[numYears][];
 
-        for (int i = 0; i < _weightedInvestments.Count; i++)
+        for (int i = 0; i < numYears; i++)
         {
-            samples[i] = new double[numSamples];
-            _weightedInvestments[i].Pdf.Samples(samples[i]);
+            samples[i] = new double[iterations];
+            combinedInvestment.Pdf.Samples(samples[i]);
         }
 
         return samples;
